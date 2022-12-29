@@ -1,6 +1,5 @@
 # coding=utf-8
 import numpy as np
-
 from data_process import data_convert
 from softmax_regression import softmax_regression
 

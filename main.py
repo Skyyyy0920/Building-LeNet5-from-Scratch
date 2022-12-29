@@ -33,7 +33,7 @@ if __name__ == '__main__':
     # get the data
     train_images, train_labels, test_images, test_labels = load_data(data_dir, train_data_dir, train_label_dir,
                                                                      test_data_dir, test_label_dir)
-    print("Got data. ")
+    print("Got data.\n")
 
     # train the classifier
     theta, iterations, loss = train(train_images, train_labels, k, iters, alpha)
