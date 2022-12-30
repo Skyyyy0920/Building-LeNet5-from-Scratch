@@ -1,10 +1,10 @@
 import numpy as np
 
 
-def pool_forward(A_prev, hparameters, mode):
+def pool_forward(A_prev, hyper_parameters, mode):
     m, n_H_prev, n_W_prev, n_C_prev = A_prev.shape
-    f = hparameters["f"]
-    stride = hparameters["stride"]
+    f = hyper_parameters["f"]
+    stride = hyper_parameters["stride"]
 
     n_H = int(1 + (n_H_prev - f) / stride)
     n_W = int(1 + (n_W_prev - f) / stride)
@@ -15,13 +15,13 @@ def pool_forward(A_prev, hparameters, mode):
         for w in range(n_W):  # loop on the horizontal axis of the output volume
             # Use the corners to define the current slice on the ith training example of A_prev, channel c
             A_prev_slice = A_prev[:, h * stride:h * stride + f, w * stride:w * stride + f, :]
-            # Compute the pooling operation on the slice. Use an if statment to differentiate the modes.
+            # Compute the pooling operation on the slice. Use an if statement to differentiate the modes.
             if mode == "max":
                 A[:, h, w, :] = np.max(A_prev_slice, axis=(1, 2))
             elif mode == "average":
                 A[:, h, w, :] = np.average(A_prev_slice, axis=(1, 2))
 
-    cache = (A_prev, hparameters)
+    cache = (A_prev, hyper_parameters)
     assert (A.shape == (m, n_H, n_W, n_C))
     return A, cache
 
@@ -30,18 +30,15 @@ def pool_backward(dA, cache, mode):
     """
     Implements the backward pass of the pooling layer
 
-    Arguments:
-    dA -- gradient of cost with respect to the output of the pooling layer, same shape as A
-    cache -- cache output from the forward pass of the pooling layer, contains the layer's input and hparameters
-    mode -- the pooling mode you would like to use, defined as a string ("max" or "average")
-
-    Returns:
-    dA_prev -- gradient of cost with respect to the input of the pooling layer, same shape as A_prev
+    :param dA: gradient of cost with respect to the output of the pooling layer, same shape as A
+    :param cache: cache output from the forward pass of the pooling layer, contains the layer's input and hyper-parameters
+    :param mode: the pooling mode you would like to use, defined as a string ("max" or "average")
+    :return: dA_prev -- gradient of cost with respect to the input of the pooling layer, same shape as A_prev
     """
-    A_prev, hparameters = cache
+    A_prev, hyper_parameters = cache
 
-    stride = hparameters["stride"]
-    f = hparameters["f"]
+    stride = hyper_parameters["stride"]
+    f = hyper_parameters["f"]
 
     m, n_H_prev, n_W_prev, n_C_prev = A_prev.shape  # 256,28,28,6
     m, n_H, n_W, n_C = dA.shape  # 256,14,14,6

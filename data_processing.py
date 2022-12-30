@@ -21,14 +21,15 @@ def load_mnist(file_dir, is_images='True'):
         # Read images
         fmt_header = '>iiii'
         magic, num_images, num_rows, num_cols = struct.unpack_from(fmt_header, bin_data, 0)
+        data_size = num_images * num_rows * num_cols
+        mat_data = struct.unpack_from('>' + str(data_size) + 'B', bin_data, struct.calcsize(fmt_header))
+        mat_data = np.reshape(mat_data, [num_images, num_rows, num_cols])
     else:
         # Read labels
         fmt_header = '>ii'
         magic, num_images = struct.unpack_from(fmt_header, bin_data, 0)
-        num_rows, num_cols = 1, 1
-    data_size = num_images * num_rows * num_cols
-    mat_data = struct.unpack_from('>' + str(data_size) + 'B', bin_data, struct.calcsize(fmt_header))
-    mat_data = np.reshape(mat_data, [num_images, num_rows, num_cols])
+        mat_data = struct.unpack_from('>' + str(num_images) + 'B', bin_data, struct.calcsize(fmt_header))
+        mat_data = np.reshape(mat_data, [num_images])
     print('Load images from %s, number: %d, data shape: %s' % (file_dir, num_images, str(mat_data.shape)))
     return mat_data
 

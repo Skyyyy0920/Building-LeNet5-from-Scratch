@@ -1,7 +1,5 @@
 import numpy as np
 
-from utils_function import *
-from data_processing import zero_pad
 from pooling_utils import *
 from convolution_utils import *
 from activation_utils import *
@@ -141,19 +139,18 @@ class ConvolutionLayer(object):
         self.lr = lr_global / (mu + h)
         return d2A_prev
 
-    # C3: Convlayer with assigned combination between input maps and weight
 
-
+# C3: convolution layer with assigned combination between input maps and weight
 class ConvolutionLayer_maps(object):
-    def __init__(self, kernel_shape, hparameters, mapping, init_mode='Gaussian_dist'):
+    def __init__(self, kernel_shape, hyper_parameters, mapping, init_mode='Gaussian_dist'):
         """
         kernel_shape: (n_f, n_f, n_C_prev, n_C)
-        hparameters = {"stride": s, "pad": p}
+        hyper_parameters = {"stride": s, "pad": p}
         """
-        self.hparameters = hparameters
+        self.hyper_parameters = hyper_parameters
         self.mapping = mapping
         self.wb = []  # list of [weight, bias]
-        self.v_wb = []  # list of [v_w,    v_b]
+        self.v_wb = []  # list of [v_w, v_b]
         for i in range(len(self.mapping)):
             weight_shape = (kernel_shape[0], kernel_shape[1], len(self.mapping[i]), 1)
             w, b = initialize(weight_shape, init_mode)
@@ -161,24 +158,23 @@ class ConvolutionLayer_maps(object):
             self.v_wb.append([np.zeros(w.shape), np.zeros(b.shape)])
 
     def forward_propagation(self, input_map):
-        self.iputmap_shape = input_map.shape  # (n_m,14,14,6)
+        self.inputmap_shape = input_map.shape  # (n_m,14,14,6)
         self.caches = []
         output_maps = []
         for i in range(len(self.mapping)):
             output_map, cache = conv_forward(input_map[:, :, :, self.mapping[i]], self.wb[i][0], self.wb[i][1],
-                                             self.hparameters)
+                                             self.hyper_parameters)
             output_maps.append(output_map)
             self.caches.append(cache)
         output_maps = np.swapaxes(np.array(output_maps), 0, 4)[0]
         return output_maps
 
     def back_propagation(self, dZ, momentum, weight_decay):
-        dA_prevs = np.zeros(self.iputmap_shape)
+        dA_prevs = np.zeros(self.inputmap_shape)
         for i in range(len(self.mapping)):
             dA_prev, dW, db = conv_backward(dZ[:, :, :, i:i + 1], self.caches[i])
             self.wb[i][0], self.wb[i][1], self.v_wb[i][0], self.v_wb[i][1] = \
-                update(self.wb[i][0], self.wb[i][1], dW, db, self.v_wb[i][0], self.v_wb[i][1], self.lr, momentum,
-                       weight_decay)
+                update(self.wb[i][0], self.wb[i][1], dW, db, self.v_wb[i][0], self.v_wb[i][1], self.lr, momentum, weight_decay)
             dA_prevs[:, :, :, self.mapping[i]] += dA_prev
         return dA_prevs
 
@@ -186,7 +182,7 @@ class ConvolutionLayer_maps(object):
 
     def SDLM(self, d2Z, mu, lr_global):
         h = 0
-        d2A_prevs = np.zeros(self.iputmap_shape)
+        d2A_prevs = np.zeros(self.inputmap_shape)
         for i in range(len(self.mapping)):
             d2A_prev, d2W = conv_SDLM(d2Z[:, :, :, i:i + 1], self.caches[i])
             d2A_prevs[:, :, :, self.mapping[i]] += d2A_prev
@@ -196,12 +192,12 @@ class ConvolutionLayer_maps(object):
 
 
 class PoolingLayer(object):
-    def __init__(self, hparameters, mode):
-        self.hparameters = hparameters
+    def __init__(self, hyper_parameters, mode):
+        self.hyper_parameters = hyper_parameters
         self.mode = mode
 
-    def forward_propagation(self, input_map):  # n,28,28,6 / n,10,10,16
-        A, self.cache = pool_forward(input_map, self.hparameters, self.mode)
+    def forward_propagation(self, input_map):  # n,28,28,6 -> n,10,10,16
+        A, self.cache = pool_forward(input_map, self.hyper_parameters, self.mode)
         return A
 
     def back_propagation(self, dA):
@@ -214,15 +210,15 @@ class PoolingLayer(object):
 
 
 class Subsampling(object):
-    def __init__(self, n_kernel, hparameters):
-        self.hparameters = hparameters
+    def __init__(self, n_kernel, hyper_parameters):
+        self.hyper_parameters = hyper_parameters
         self.weight = np.random.normal(0, 0.1, (1, 1, 1, n_kernel))
         self.bias = np.random.normal(0, 0.1, (1, 1, 1, n_kernel))
         self.v_w = np.zeros(self.weight.shape)
         self.v_b = np.zeros(self.bias.shape)
 
     def foward_prop(self, input_map):  # n,28,28,6 / n,10,10,16
-        A, self.cache = subsampling_forward(input_map, self.weight, self.bias, self.hparameters)
+        A, self.cache = subsampling_forward(input_map, self.weight, self.bias, self.hyper_parameters)
         return A
 
     def back_prop(self, dA, momentum, weight_decay):
@@ -254,7 +250,7 @@ class Activation(object):
         dA = np.multiply(dZ, self.d_act(self.input_image))
         return dA
 
-    # Stochastic Diagonal Levenberg-Marquaedt
+    # Stochastic Diagonal Levenberg-Marquardt
     def SDLM(self, d2Z):  # d2_LeNet5_squash
         dA = np.multiply(d2Z, np.power(self.d_act(self.input_image), 2))
         return dA
@@ -262,7 +258,6 @@ class Activation(object):
 
 class FCLayer(object):
     def __init__(self, weight_shape, init_mode='Gaussian_dist'):
-        # Initialization
         self.v_w, self.v_b = np.zeros(weight_shape), np.zeros((weight_shape[-1],))
         self.weight, self.bias = initialize(weight_shape, init_mode)
 
@@ -271,12 +266,10 @@ class FCLayer(object):
         return np.matmul(self.input_array, self.weight)  # (n_m, 84)
 
     def back_propagation(self, dZ, momentum, weight_decay):
-        dA = np.matmul(dZ, self.weight.T)  # (n_m, 84) * (84, 120) = (n_m, 120)
-        dW = np.matmul(self.input_array.T, dZ)  # (n_m, 120).T * (n_m, 84) = (120, 84)
+        dA = np.matmul(dZ, self.weight.T)  # (256, 84) * (84, 120) = (256, 120)  (n_m, 84) * (84, 120) = (n_m, 120)
+        dW = np.matmul(self.input_array.T, dZ)  # (256, 120).T * (256, 84) = (256, 1, 120, 84)  (n_m, 120).T * (n_m, 84) = (120, 84)
         db = np.sum(dZ.T, axis=1)  # (84,)
-
-        self.weight, self.bias, self.v_w, self.v_b = \
-            update(self.weight, self.bias, dW, db, self.v_w, self.v_b, self.lr, momentum, weight_decay)
+        self.weight, self.bias, self.v_w, self.v_b = update(self.weight, self.bias, dW, db, self.v_w, self.v_b, self.lr, momentum, weight_decay)
         return dA
 
     # Stochastic Diagonal Levenberg-Marquaedt
@@ -341,9 +334,6 @@ class RBFLayer_trainable_weight(object):
         return dy_predict
 
 
-# bitmap = rbf_init_weight()
-
-
 class RBFLayer(object):
     def __init__(self, weight):
         self.weight = weight  # (10, 84)
@@ -376,3 +366,26 @@ class RBFLayer(object):
     def SDLM(self):
         # d2y_predict
         return np.ones(self.input_array.shape)
+
+
+# initialization of the weights & bias
+def initialize(kernel_shape, mode='Fan-in'):
+    bias_shape = (1, 1, 1, kernel_shape[-1]) if len(kernel_shape) == 4 else (kernel_shape[-1],)
+    if mode == 'Gaussian_dist':
+        mu, sigma = 0, 0.1  # mu: mean value, sigma: standard deviation
+        weight = np.random.normal(mu, sigma, kernel_shape)
+        bias = np.ones(bias_shape) * 0.01
+    elif mode == 'Fan-in':  # original init. in the paper
+        Fi = np.prod(kernel_shape) / kernel_shape[-1]
+        weight = np.random.uniform(-2.4 / Fi, 2.4 / Fi, kernel_shape)
+        bias = np.ones(bias_shape) * 0.01
+    return weight, bias
+
+
+# update for the weights
+def update(weight, bias, dW, db, vw, vb, lr, momentum=0, weight_decay=0):
+    vw_u = momentum * vw - weight_decay * lr * weight - lr * dW
+    vb_u = momentum * vb - weight_decay * lr * bias - lr * db
+    weight_u = weight + vw_u
+    bias_u = bias + vb_u
+    return weight_u, bias_u, vw_u, vb_u
