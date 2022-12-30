@@ -1,6 +1,13 @@
 import numpy as np
 
 from utils_function import *
+from data_processing import zero_pad
+from pooling_utils import *
+from convolution_utils import *
+from activation_utils import *
+from RBF_init import *
+
+bitmap = rbf_init_weight()
 
 
 class LeNet5(object):
@@ -9,6 +16,7 @@ class LeNet5(object):
 
     Reference: https://www.cnblogs.com/fengff/p/10173071.html
     """
+
     def __init__(self):
         layer_shape = {"C1": (5, 5, 1, 6),
                        "C3": (5, 5, 6, 16),
@@ -16,18 +24,23 @@ class LeNet5(object):
                        "F6": (120, 84),
                        "OUTPUT": (84, 10)}
 
-        parameters_convlayer = {"stride": 1, "pad": 0}
-        parameters_pooling = {"stride": 2, "f": 2}
+        # Designate combination of kernels and feature maps of S2.
+        C3_mapping = [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4, 5], [4, 5, 0], [5, 0, 1],
+                      [0, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 0], [4, 5, 0, 1],
+                      [5, 0, 1, 2], [0, 1, 3, 4], [1, 2, 4, 5], [0, 2, 3, 5], [0, 1, 2, 3, 4, 5]]
 
-        self.C1 = ConvolutionLayer(layer_shape["C1"], parameters_convlayer)
+        hyper_parameters_convolution = {"stride": 1, "pad": 0}
+        hyper_parameters_pooling = {"stride": 2, "f": 2}
+
+        self.C1 = ConvolutionLayer(layer_shape["C1"], hyper_parameters_convolution)
         self.a1 = Activation("LeNet5_squash")
-        self.S2 = PoolingLayer(parameters_pooling, "average")
+        self.S2 = PoolingLayer(hyper_parameters_pooling, "average")
 
-        self.C3 = ConvolutionLayer_maps(layer_shape["C3"], parameters_convlayer, C3_mapping)
+        self.C3 = ConvolutionLayer_maps(layer_shape["C3"], hyper_parameters_convolution, C3_mapping)
         self.a2 = Activation("LeNet5_squash")
-        self.S4 = PoolingLayer(parameters_pooling, "average")
+        self.S4 = PoolingLayer(hyper_parameters_pooling, "average")
 
-        self.C5 = ConvolutionLayer(layer_shape["C5"], parameters_convlayer)
+        self.C5 = ConvolutionLayer(layer_shape["C5"], hyper_parameters_convolution)
         self.a3 = Activation("LeNet5_squash")
 
         self.F6 = FCLayer(layer_shape["F6"])
@@ -81,7 +94,7 @@ class LeNet5(object):
         Stochastic Diagonal Levenberg-Marquardt method for determining the learning rate before the beginning of each epoch
         :param mu: mean value
         :param lr_global:
-        :return:
+        :return: None
         """
         d2y_pred = self.Output.SDLM()
         d2y_pred = self.a4.SDLM(d2y_pred)
@@ -328,7 +341,7 @@ class RBFLayer_trainable_weight(object):
         return dy_predict
 
 
-bitmap = rbf_init_weight()
+# bitmap = rbf_init_weight()
 
 
 class RBFLayer(object):

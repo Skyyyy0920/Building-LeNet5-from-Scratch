@@ -3,46 +3,6 @@ import numpy as np
 import math
 
 
-def readDataset(dataset):
-    """
-    read the images and labels
-    :param dataset:
-    :return:
-    """
-    (image, label) = dataset
-    with open(label, 'rb') as flbl:
-        magic, num = struct.unpack(">II", flbl.read(8))
-        lbl = np.fromfile(flbl, dtype=np.int8)
-
-    with open(image, 'rb') as fimg:
-        magic, num, rows, cols = struct.unpack(">IIII", fimg.read(16))
-        img = np.fromfile(fimg, dtype=np.uint8).reshape(len(lbl), rows, cols)
-
-    return (img, lbl)
-
-
-# padding for the matrix of images
-def zero_pad(X, pad):
-    X_pad = np.pad(X, ((0,), (pad,), (pad,), (0,)), 'constant', constant_values=(0, 0))
-    return X_pad
-
-
-# normalization of the input images
-def normalize(image, mode='lenet5'):
-    image -= image.min()
-    image = image / image.max()
-    # range = [0,1]
-    if mode == '0p1':
-        return image
-    # range = [-1,1]
-    elif mode == 'n1p1':
-        image = image * 2 - 1
-    # range = [-0.1,1.175]
-    elif mode == 'lenet5':
-        image = image * 1.275 - 0.1
-    return image
-
-
 def initialize(kernel_shape, mode='Fan-in'):
     """
     initialization of the weights & bias
@@ -85,17 +45,15 @@ def random_mini_batches(image, label, mini_batch_size=256, one_batch=False):
     if one_batch:
         mini_batch_image = shuffled_image[0: mini_batch_size, :, :, :]
         mini_batch_label = shuffled_label[0: mini_batch_size]
-        return (mini_batch_image, mini_batch_label)
+        return mini_batch_image, mini_batch_label
 
     # Partition (shuffled_image, shuffled_Y). Minus the end case.
-    num_complete_minibatches = math.floor(
-        m / mini_batch_size)  # number of mini batches of size mini_batch_size in your partitionning
+    num_complete_minibatches = math.floor(m / mini_batch_size)
     for k in range(0, num_complete_minibatches):
         mini_batch_image = shuffled_image[k * mini_batch_size: k * mini_batch_size + mini_batch_size, :, :, :]
         mini_batch_label = shuffled_label[k * mini_batch_size: k * mini_batch_size + mini_batch_size]
         mini_batch = (mini_batch_image, mini_batch_label)
         mini_batches.append(mini_batch)
-
     # Handling the end case (last mini-batch < mini_batch_size)
     if m % mini_batch_size != 0:
         mini_batch_image = shuffled_image[num_complete_minibatches * mini_batch_size: m, :, :, :]
