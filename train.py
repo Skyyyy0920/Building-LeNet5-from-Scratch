@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 
 # Number of epochs & learning rate in the original paper
-epochs_original, lr_global_original = 1, np.array([5e-4] * 2 + [2e-4] * 3 + [1e-4] * 3 + [5e-5] * 4 + [1e-5] * 8)
+epochs_original, lr_global_original = 16, np.array([5e-4] * 2 + [2e-4] * 3 + [1e-4] * 3 + [5e-5] * 4 + [1e-5] * 8)
 # Number of epochs & learning rate I used
 epochs, lr_global_list = epochs_original, lr_global_original * 100
 
