@@ -1,25 +1,9 @@
 # coding=utf-8
-import numpy as np
-import struct
-import os
-import time
-import pandas as pd
-import matplotlib.pyplot as plt
 from data_processing import *
 from train import *
-from evaluate import *
 from LeNet5 import *
 
 if __name__ == '__main__':
-    # 显示所有列
-    pd.set_option('display.max_columns', None)
-    # 显示所有行
-    pd.set_option('display.max_rows', None)
-    # 设置value的显示长度
-    pd.set_option('max_colwidth', 100)
-    # 设置1000列时才换行
-    pd.set_option('display.width', 1000)
-
     # get the data
     train_images, train_labels, test_images, test_labels = load_data()
     print("Got data...\n")

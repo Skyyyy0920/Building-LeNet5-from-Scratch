@@ -7,18 +7,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def train(LeNet5, train_images, train_labels):
-    # Number of epochs & learning rate in the original paper
-    epochs_original, lr_global_original = 1, np.array([5e-4] * 2 + [2e-4] * 3 + [1e-4] * 3 + [5e-5] * 4 + [1e-5] * 8)
-    # Number of epochs & learning rate I used
-    epochs, lr_global_list = epochs_original, lr_global_original * 100
+# Number of epochs & learning rate in the original paper
+epochs_original, lr_global_original = 1, np.array([5e-4] * 2 + [2e-4] * 3 + [1e-4] * 3 + [5e-5] * 4 + [1e-5] * 8)
+# Number of epochs & learning rate I used
+epochs, lr_global_list = epochs_original, lr_global_original * 100
 
+
+def train(LeNet5, train_images, train_labels):
     momentum = 0.9
     weight_decay = 0
     batch_size = 256
 
     # Training loops
-    st = time.time()
     cost_last, count = np.Inf, 0
     err_rate_list = []
     for epoch in range(0, epochs):
@@ -65,22 +65,23 @@ def train(LeNet5, train_images, train_labels):
         print("0/1 error of training set:", error01_train, "/", len(train_labels))
         # print("0/1 error of testing set: ", error01_test, "/", len(test_labels))
         print("Time used: ", time.time() - ste, "sec")
-        print("----------------------------------- epoch{} end -------------------------------------\n".format(epoch + 1))
+        print(
+            "----------------------------------- epoch{} end -------------------------------------\n".format(epoch + 1))
 
-        with open('model_data_' + str(epoch) + '.pkl', 'wb') as output:
-            pickle.dump(LeNet5, output, pickle.HIGHEST_PROTOCOL)
+        # conserve the model
+        # with open('model_data_' + str(epoch) + '.pkl', 'wb') as output:
+        #     pickle.dump(LeNet5, output, pickle.HIGHEST_PROTOCOL)
 
     err_rate_list = np.array(err_rate_list).T
-    print("Total time used: ", time.time() - st, "sec")
 
     # This shows the error rate of training and testing data after each epoch
-    x = np.arange(epochs)
-    plt.xlabel('epochs')
-    plt.ylabel('error rate')
-    plt.plot(x, err_rate_list[0])
-    plt.plot(x, err_rate_list[1])
-    plt.legend(['training data', 'testing data'], loc='upper right')
-    plt.show()
+    # x = np.arange(epochs)
+    # plt.xlabel('epochs')
+    # plt.ylabel('error rate')
+    # plt.plot(x, err_rate_list[0])
+    # plt.plot(x, err_rate_list[1])
+    # plt.legend(['training data', 'testing data'], loc='upper right')
+    # plt.show()
 
 
 # return random-shuffled mini-batches
